@@ -1,8 +1,7 @@
-//! Contains the base Tokenizer struct and a few common helper functions.
-//! The base struct also contains the (common) save/load functionality.
-//! It would be possible to be a lot more strict about the interface and
-//! e.g. isolating all regex/pattern parts to the RegexTokenizer, but
-//! some concessions are made for simplicity.
+//! 包含基本的 Tokenizer 结构体和一些常用的辅助函数。
+//! 基本结构体还包括了（通用的）保存/加载功能。
+//! 可以对接口更加严格，例如将所有正则表达式部分隔离到 RegexTokenizer 中，但为了简化起见，做了一些妥协。
+
 
 use std::io::Write;
 use std::path::Path;
@@ -13,14 +12,13 @@ use std::{
 
 use indexmap::IndexMap;
 
-/// Token type to support up to 2^31 distinct tokens. It is signed in case a Tokenizer
-/// needs to use negative values for special tokens.
+/// 用于支持最多 2^31 个不同令牌的类型。它是有符号的，以防分词器需要使用负值表示特殊令牌。
 pub type Token = i32;
 
-/// Count type to support up to 2^64 occurences of any token pair.
+/// 用于支持最多 2^64 次任何令牌对出现的计数类型。
 pub type Count = u64;
 
-/// Base trait for Tokenizers to implement.
+/// 分词器需要实现的基本特质。
 pub trait Tokenizer {
     fn special_tokens(&self) -> &IndexMap<String, Token>;
 
@@ -28,36 +26,35 @@ pub trait Tokenizer {
 
     fn vocab(&self) -> &IndexMap<Token, Vec<u8>>;
 
-    /// A Tokenizer can encode a string into a list of integers.
+    /// 分词器可以将字符串编码为整数列表。
     fn encode(&self, text: &str) -> Vec<Token>;
 
-    /// A Tokenizer can decode a list of integers into a string.
+    /// 分词器可以将整数列表解码为字符串。
     fn decode(&self, ids: &[Token]) -> String;
 }
 
-/// A Tokenizer that can be trained.
+/// 可以进行训练的分词器。
 pub trait Trainable: Tokenizer {
-    /// Train a vocabulary of size `vocab_size` in distinct Tokens from `text`.
+    /// 从 `text` 中训练一个大小为 `vocab_size` 的不同令牌词汇表。
     fn train(&mut self, text: &str, vocab_size: Token, verbose: bool);
 }
 
 pub trait Saveable: Tokenizer {
     fn pattern(&self) -> &str;
 
-    /// Saves the tokenizer's model and vocabulary to two files:
-    /// - `file_prefix.model`: The model file used for loading the tokenizer.
-    /// - `file_prefix.vocab`: A human-readable version of the vocabulary for inspection.
+    /// 保存分词器的模型和词汇表到两个文件：
+    /// - `file_prefix.model`：用于加载分词器的模型文件。
+    /// - `file_prefix.vocab`：供检查的人类可读版本的词汇表。
     ///
-    /// This is inspired by (but not equivalent to) SentencePiece's model saving.
+    /// 这一做法受到（但不等同于）SentencePiece 模型保存的启发。
     ///
-    /// # Arguments
+    /// # 参数
     ///
-    /// * `dir` - The path to the output directory.
-    /// * `prefix` - The prefix for the output file name.
+    /// * `dir` - 输出目录的路径。
+    /// * `prefix` - 输出文件名的前缀。
     ///
-    /// # Examples
+    /// # 示例
     ///
-    /// ```
     /// # use tempfile::tempdir;
     /// use minbpe::Saveable;
     /// use minbpe::Tokenizer;
@@ -66,19 +63,17 @@ pub trait Saveable: Tokenizer {
     /// let dir = tempdir().unwrap();
     /// let path = dir.path();
     /// tokenizer.save(&path, "prefix");
-    /// ```
+    ///
     fn save(&self, dir: &Path, prefix: &str) {
-        // let dir = dir.as_ref();
-
-        // Write the model file (used for loading the tokenizer later)
+        // 写入模型文件（用于稍后加载分词器）
         let model_file_path = dir.join(format!("{}.model", prefix));
         let mut model_file = File::create(model_file_path).expect("Unable to create model file");
 
-        // Write the version, pattern, and merges
+       // 写入版本、模式和合并
         writeln!(model_file, "minbpe v1").expect("Unable to write to model file");
         writeln!(model_file, "{}", self.pattern()).expect("Unable to write to model file");
 
-        // Write the special tokens (first the number, then each token and its index)
+        // 写入特殊令牌（首先是数量，然后是每个令牌及其索引）
         writeln!(model_file, "{}", self.special_tokens().len())
             .expect("Unable to write to model file");
         for (special, idx) in self.special_tokens() {
@@ -88,17 +83,17 @@ pub trait Saveable: Tokenizer {
         let mut merges: Vec<(&(Token, Token), &Token)> = self.merges().iter().collect();
         merges.sort_by_key(|&k| k.1);
 
-        // Write the merges dictionary
+        // 写入合并字典
         for (token_pair, _new_token) in merges {
             writeln!(model_file, "{} {}", token_pair.0, token_pair.1)
                 .expect("Unable to write to model file");
         }
 
-        // Write the vocabulary file (for human inspection)
+        // 写入词汇表文件（提供给人工检查，可读性较好）
         let vocab_file_path = dir.join(format!("{}.vocab", prefix));
         let mut vocab_file = File::create(vocab_file_path).expect("Unable to create vocab file");
 
-        // Invert the merges dictionary for easier lookup
+        // 反转合并字典以便于查找
         let inverted_merges: IndexMap<Token, (Token, Token)> = self
             .merges()
             .iter()
@@ -131,21 +126,20 @@ pub trait Loadable: Tokenizer {
     fn set_merges(&mut self, merges: IndexMap<(Token, Token), Token>);
     fn set_vocab(&mut self, vocab: IndexMap<Token, Vec<u8>>);
 
-    /// Loads the tokenizer's model from a file.
+    /// 从文件加载分词器的模型。
     ///
-    /// This is the inverse of `save` but only for the model file.
+    /// 这是 `save` 的逆操作，但仅针对模型文件。
     ///
-    /// # Arguments
+    /// # 参数
     ///
-    /// * `model_file` - The path to the model file.
+    /// * `model_file` - 模型文件的路径。
     ///
-    /// # Panics
+    /// # 异常
     ///
-    /// Panics if the model file does not have a ".model" extension or if the file format is invalid.
+    /// 如果模型文件没有 ".model" 扩展名或文件格式无效，则会引发异常。
     ///
-    /// # Examples
+    /// # 示例
     ///
-    /// ```
     /// use std::path::PathBuf;
     /// use minbpe::Loadable;
     /// use minbpe::Tokenizer;
@@ -153,10 +147,8 @@ pub trait Loadable: Tokenizer {
     /// let mut tokenizer = BasicTokenizer::new();
     /// let model_path = PathBuf::from("examples/basic_example.model");
     /// tokenizer.load(&model_path);
-    /// ```
+    ///
     fn load(&mut self, model_file: &Path) {
-        // FIXME: Return a Result instead of panicking
-        // let model_file = model_file.as_ref();
         assert!(
             model_file.extension().map_or(false, |ext| ext == "model"),
             "Model file must have a .model extension"
@@ -182,8 +174,7 @@ pub trait Loadable: Tokenizer {
             panic!("Missing version line in model file");
         }
 
-        // FIXME: Check whether Tokenizer supports a Pattern at all.
-
+        // 检查 Tokenizer 是否支持 Pattern。
         if let Some(pattern) = line_iter.next() {
             self.set_pattern(pattern);
         } else {
@@ -195,10 +186,9 @@ pub trait Loadable: Tokenizer {
                 .parse::<Token>()
                 .expect("Invalid number of special tokens");
 
-            // FIXME: Check whether Tokenizer supports Special Tokens at all.
-            // FIXME: Ensure it is >= 0 because Token type is signed.
-            // FIXME: Enforce some reasonable maximum less than 2^31.
-
+            // FIXME: 检查 Tokenizer 是否支持特殊令牌。
+            // FIXME: 确保其值 >= 0，因为 Token 类型是有符号的。
+            // FIXME: 强制执行一个小于 2^31 的合理最大值。
             for _ in 0..num_special {
                 if let Some(special_line) = line_iter.next() {
                     let mut parts = special_line.split_whitespace();
@@ -241,34 +231,34 @@ pub trait Loadable: Tokenizer {
     }
 }
 
-/// Additional operations for Tokenizers.
-/// Given a slice of integers, returns a new `IndexMap` containing the counts of consecutive pairs.
+/// 分词器的附加操作。
+/// 给定一个整数切片，返回一个新的 `IndexMap`，其中包含连续对的计数。
 ///
-/// Example:
-/// ```
+/// 示例：
+///
 /// # use indexmap::IndexMap;
 /// # use minbpe::get_stats;
 /// let ids = vec![1, 2, 3, 1, 2];
 /// let counts = get_stats(&ids);
 /// assert_eq!(counts, IndexMap::from([((1, 2), 2), ((2, 3), 1), ((3, 1), 1)]));
-/// ```
+///
 pub fn get_stats(ids: &[Token]) -> IndexMap<(Token, Token), Count> {
     let mut counts = IndexMap::new();
     update_stats(ids, &mut counts);
     counts
 }
 
-/// Updates an existing `IndexMap` with the counts of consecutive pairs from the given slice of integers.
+/// 使用给定整数切片中的连续对计数更新现有的 `IndexMap`。
 ///
-/// Example:
-/// ```
+/// 示例：
+///
 /// # use indexmap::IndexMap;
 /// # use minbpe::update_stats;
 /// let ids = vec![1, 2, 3, 1, 2];
 /// let mut existing_counts = IndexMap::from([((1, 2), 1), ((2, 3), 1)]);
 /// update_stats(&ids, &mut existing_counts);
 /// assert_eq!(existing_counts, IndexMap::from([((1, 2), 3), ((2, 3), 2), ((3, 1), 1)]));
-/// ```
+///
 pub fn update_stats(ids: &[Token], counts: &mut IndexMap<(Token, Token), Count>) {
     for pair in ids.windows(2) {
         let pair = (pair[0], pair[1]);
@@ -276,9 +266,7 @@ pub fn update_stats(ids: &[Token], counts: &mut IndexMap<(Token, Token), Count>)
     }
 }
 
-/// Given an `IndexMap` of consecutive pair counts, returns the pair with the highest count. This
-/// technique preserves the insertion order of the pairs that IndexMap maintains, returning the
-/// first-inserted pair with the highest count.
+/// 给定一个连续对计数的 `IndexMap`，返回计数最高的对。这种方法保留了 `IndexMap` 维护的对的插入顺序，返回计数最高的第一个插入的对。
 pub fn get_max_entry(stats: &IndexMap<(Token, Token), Count>) -> Option<(&(Token, Token), &Count)> {
     let mut max_entry = None;
 
@@ -297,19 +285,18 @@ pub fn get_max_entry(stats: &IndexMap<(Token, Token), Count>) -> Option<(&(Token
     max_entry
 }
 
-/// Merges consecutive occurrences of a pair of integers in the given slice,
-/// replacing them with a new integer.
+/// 在给定的切片中合并连续出现的整数对，并用新的整数替换它们。
 ///
-/// Arguments:
-/// - `ids`: The slice of Tokens to merge.
-/// - `pair`: The pair of consecutive integers to replace.
-/// - `new_id`: The new integer to replace the consecutive pairs with.
+/// 参数：
+/// - `ids`: 要合并的 Tokens 切片。
+/// - `pair`: 要替换的连续整数对。
+/// - `new_id`: 用于替换连续对的新整数。
 ///
-/// Returns:
-/// A new `Vec<Token>` with the merged Tokens.
+/// 返回：
+/// 一个新的 `Vec<Token>`，包含合并后的 Tokens。
 ///
-/// Example:
-/// ```
+/// 示例：
+///
 /// # use minbpe::merge;
 /// let ids = vec![1, 2, 3, 1, 2];
 /// let pair = (1, 2);
@@ -334,7 +321,7 @@ pub fn merge(ids: &[Token], pair: (Token, Token), new_id: Token) -> Vec<Token> {
     new_ids
 }
 
-/// vocab is simply and deterministically derived from merges
+/// 词汇表是从合并简单且确定地派生出来的。
 pub fn build_vocab(
     special_tokens: &IndexMap<String, Token>,
     merges: &IndexMap<(Token, Token), Token>,
@@ -354,28 +341,27 @@ pub fn build_vocab(
     vocab
 }
 
-/// Replaces control characters in the given string with their Unicode escape sequences.
+/// 将给定字符串中的控制字符替换为它们的 Unicode 逃逸序列。
 ///
-/// Control characters are characters that distort the output, such as newline ('\n') or
-/// other characters that fall under the Unicode category "C" (Other).
+/// 控制字符是指会扭曲输出的字符，如换行符 (`\n`) 或其他属于 Unicode 类别 "C"（其他）的字符。
 ///
-/// References:
-/// - https://stackoverflow.com/questions/4324790/removing-control-characters-from-a-string-in-python/19016117#19016117
-/// - http://www.unicode.org/reports/tr44/#GC_Values_Table
+/// 参考资料：
+/// - [https://stackoverflow.com/questions/4324790/removing-control-characters-from-a-string-in-python/19016117#19016117](https://stackoverflow.com/questions/4324790/removing-control-characters-from-a-string-in-python/19016117#19016117)
+/// - [http://www.unicode.org/reports/tr44/#GC_Values_Table](http://www.unicode.org/reports/tr44/#GC_Values_Table)
 ///
-/// Arguments:
-/// - `s`: The string to process.
+/// 参数：
+/// - `s`: 要处理的字符串。
 ///
-/// Returns:
-/// A new `String` with control characters replaced by their Unicode escape sequences.
+/// 返回：
+/// 一个新的 `String`，其中控制字符被替换为它们的 Unicode 逃逸序列。
 ///
-/// Example:
-/// ```ignore
+/// 示例：
+///
 /// # use minbpe::tokenizer::replace_control_characters;
 /// let s = "Hello\nWorld\u{7}!";
 /// let result = replace_control_characters(s);
-/// assert_eq!(result, "Hello\\u000aWorld\\u0007!");
-/// ```
+/// assert_eq!(result, "Hello\u000aWorld\u0007!");
+///
 fn replace_control_characters(s: &str) -> String {
     let mut chars = String::with_capacity(s.len());
 
@@ -391,15 +377,16 @@ fn replace_control_characters(s: &str) -> String {
     chars
 }
 
-/// Pretty-prints a token by decoding it as UTF-8 and escaping control characters.
+/// 以美观的方式打印令牌，通过将其解码为 UTF-8 并转义控制字符。
 ///
-/// Arguments:
-/// - `token`: The token as a byte slice.
+/// 参数：
+/// - `token`: 作为字节切片的令牌。
 ///
-/// Returns:
-/// A `String` representation of the token with control characters escaped.
+/// 返回：
+/// 一个 `String` 表示的令牌，其中控制字符已被转义。
 ///
-/// Example:
+/// 示例：
+///
 /// ```ignore
 /// # use minbpe::tokenizer::render_token;
 /// let token = b"Hello\nWorld\x07!";

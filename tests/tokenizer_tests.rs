@@ -12,25 +12,23 @@ mod tests {
 
     use indexmap::IndexMap;
     use tempfile::tempdir;
-
-    // Quick unit test, following along the Wikipedia example:
+    // 快速单元测试，遵循维基百科的例子：
     // https://en.wikipedia.org/wiki/Byte_pair_encoding
     //
-    // According to Wikipedia, running bpe on the input string:
-    // "aaabdaaabac"
+    // 根据维基百科，对输入字符串 "aaabdaaabac" 运行 BPE：
     //
-    // for 3 merges will result in string:
-    // "XdXac"
+    // 经过 3 次合并后，结果字符串为 "XdXac"：
     //
-    // where:
-    // X=ZY
-    // Y=ab
-    // Z=aa
+    // 其中：
+    // X = ZY
+    // Y = ab
+    // Z = aa
     //
-    // Keep in mind that for us a=97, b=98, c=99, d=100 (ASCII values)
-    // so Z will be 256, Y will be 257, X will be 258.
+    // 请注意，对于我们来说，a=97, b=98, c=99, d=100（ASCII 值）
+    // 因此 Z 将是 256，Y 将是 257，X 将是 258。
     //
-    // So we expect the output list of ids to be [258, 100, 258, 97, 99]
+    // 所以我们期望输出的 id 列表为 [258, 100, 258, 97, 99]
+
     fn test_wikipedia_example_inner(tokenizer: &mut Box<dyn Trainable>) {
         let text = "aaabdaaabac";
         tokenizer.train(text, 256 + 3, false);
@@ -54,28 +52,29 @@ mod tests {
     }
 
     fn test_save_load_inner(special_tokens: &IndexMap<String, Token>) {
-        // take a bit more complex piece of text and train the tokenizer
+        // 选取一段稍微复杂一些的文本并训练分词器
         let text = LLAMA_TEXT;
-        // create a Tokenizer and do 64 merges
+        // 创建一个 Tokenizer 并进行 64 次合并
         let mut tokenizer = RegexTokenizerStruct::default();
         tokenizer.train(text, 256 + 64, false);
-        tokenizer.set_special_tokens(special_tokens.clone()); // Feels weird to do this after training, not part of setup
+        // 在训练之后做这件事感觉有些奇怪，这不是设置的一部分
+        tokenizer.set_special_tokens(special_tokens.clone());
 
-        // verify that decode(encode(x)) == x
+        // 验证 decode(encode(x)) == x
         let encoded = tokenizer.encode_special(text, AllowedSpecial::All);
         let decoded = tokenizer.decode(&encoded);
         assert_eq!(decoded, text);
 
-        // verify that save/load work as expected; save the tokenizer
+        // 验证 save/load 是否按预期工作；保存分词器
         let dir = tempdir().unwrap();
         tokenizer.save(dir.path(), "test_tokenizer_tmp");
 
-        // re-load the tokenizer
+        // 重新加载分词器
         let mut tokenizer = RegexTokenizerStruct::default();
         let model_file = dir.path().join("test_tokenizer_tmp.model");
         tokenizer.load(&model_file);
 
-        // verify that decode(encode(x)) == x
+        // 验证 decode(encode(x)) == x
         assert_eq!(tokenizer.decode(&encoded), text);
         assert_eq!(
             tokenizer.decode(&tokenizer.encode_special(text, AllowedSpecial::All)),

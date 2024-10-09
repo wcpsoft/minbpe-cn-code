@@ -9,7 +9,7 @@ mod tests {
 
     use minbpe::test_common::{unpack, TEST_STRINGS};
 
-    // test that our tokenizer matches the official GPT-4 tokenizer
+   // 测试我们的分词器是否与官方的 GPT-4 分词器匹配
     fn test_gpt4_tiktoken_equality_inner(text: String) {
         let special_tokens: HashSet<&str> = HashSet::new();
 
@@ -50,7 +50,8 @@ mod tests {
 
     #[test]
     fn test_gpt4_tiktoken_equality() {
-        GPT4Tokenizer::initialize(); // pre-initialize the tokenizer static data
+        // 初始化 GPT4Tokenizer 静态数据
+        GPT4Tokenizer::initialize();
 
         for text in TEST_STRINGS.iter() {
             println!("test_gpt4_tiktoken_equality: testing with text: {:?}", text);

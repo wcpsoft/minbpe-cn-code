@@ -1,7 +1,5 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
+# 用于失败案例的种子，这些种子是由 proptest 生成的。它会自动读取这些种子，
+# 并在生成任何新的测试用例之前重新运行这些特定的案例。
 #
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
+# 建议将此文件提交到源代码控制中，以便每个人运行测试时都能从中受益。
 cc 4a95a5006a1366458c24f6b29e4d255ce9e7cacb790f546d44284b6700898251 # shrinks to s = "\u{1e01b}%SΣ"

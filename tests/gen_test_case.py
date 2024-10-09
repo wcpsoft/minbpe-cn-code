@@ -3,9 +3,8 @@ import random
 
 def generate_test_case():
     """
-    Generate a test case for checking Rust IndexMap preserves insertion order like Python dict.
-
-    Note: The test case in question is in tokenizer.rs.
+    生成测试用例以检查Rust中的IndexMap结构与Python中的dict结构是否一致。
+    注意：相关测试用例在tokenizer.rs文件中。
     """
     stats = {}
     for i in range(20):

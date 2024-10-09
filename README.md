@@ -1,4 +1,4 @@
-# `minbpe-rs` 
+# minbpe-rs库的中文注解
 
 > minbpe-rs是对Andrej Karpathy编写的minbpe的rust版实现。
 

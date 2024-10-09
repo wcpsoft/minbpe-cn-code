@@ -7,7 +7,7 @@ use minbpe::RegexTokenizerTrait;
 fn main() -> std::io::Result<()> {
     let file_path = PathBuf::from("tests/taylorswift.txt");
 
-    // Pre-initialize the tokenizer
+    // 预初始化分词器
     println!("Pre-initializing the tokenizer...");
     let start = std::time::Instant::now();
     GPT4Tokenizer::initialize();
@@ -17,7 +17,7 @@ fn main() -> std::io::Result<()> {
         duration
     );
 
-    // Get default instance of the tokenizer
+    // 获取分词器的默认实例
     println!("Getting a default instance of GPT4Tokenizer...");
     let start = std::time::Instant::now();
     let tokenizer = GPT4Tokenizer::default();
@@ -27,7 +27,7 @@ fn main() -> std::io::Result<()> {
         duration
     );
 
-    // Read the input file
+    // 读取输入文件
     println!("Reading file: {:?}...", file_path);
     let start = std::time::Instant::now();
     let text = fs::read_to_string(file_path)?;
@@ -38,7 +38,7 @@ fn main() -> std::io::Result<()> {
         duration
     );
 
-    // Timing the encoding process, optional.
+    // 对编码过程进行计时，可选。
     let start = std::time::Instant::now();
     let tokens = tokenizer.encode(&text);
     let duration = start.elapsed();

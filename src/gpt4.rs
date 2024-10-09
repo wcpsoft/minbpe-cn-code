@@ -24,8 +24,7 @@ lazy_static! {
     };
 }
 
-// We need this because tiktoken-rs does not expose the encoder and we need to recover the merges. If it did, we would
-// use tiktoken_rs::cl100k_base() and get the encoder from there.
+// 我们需要这样做，因为 tiktoken-rs 没有暴露编码器，而我们需要恢复合并。如果它暴露了编码器，我们将会使用 `tiktoken_rs::cl100k_base()` 并从中获取编码器。
 lazy_static! {
     static ref GPT4_MERGEABLE_RANKS: IndexMap<Vec<u8>, Token> = {
         // https://github.com/zurawiki/tiktoken-rs/blob/main/tiktoken-rs/assets/cl100k_base.tiktoken
@@ -108,15 +107,13 @@ impl Default for GPT4Tokenizer {
 }
 
 impl GPT4Tokenizer {
-    /// This method may be called before any other method in this module, in case you want to ensure all the
-    /// lazy static initializations are done before any other operation.
+    /// 此方法可以在模块中的其他任何方法之前调用，以确保在执行任何其他操作之前完成所有懒惰静态初始化。
     pub fn initialize() {
         let _ = &*GPT4_SPLIT_COMPILED_PATTERN;
         let _ = &*GPT4_MERGEABLE_RANKS;
     }
 
     pub fn new() -> Self {
-        // let enc = cl100k_base().unwrap();
         let mergeable_ranks = &GPT4_MERGEABLE_RANKS;
         let merges = recover_merges(mergeable_ranks);
         let mut vocab: IndexMap<Token, Vec<u8>> =

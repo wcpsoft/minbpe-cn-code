@@ -5,33 +5,33 @@ use std::collections::HashSet;
 use crate::{get_max_entry, Loadable, Saveable, Trainable};
 use crate::{get_stats, merge, update_stats, Token, Tokenizer};
 
-/// The main GPT text split patterns, see
+/// 主要的 GPT 文本分割模式，详见
 /// https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai_public.py
+
 pub const GPT2_SPLIT_PATTERN: &str =
     r"'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+";
 
 pub const GPT4_SPLIT_PATTERN: &str = r"'(?i:[sdmt]|ll|ve|re)|[^\r\n\p{L}\p{N}]?+\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]++[\r\n]*|\s*[\r\n]|\s+(?!\S)|\s+";
 
-/// Specifies how to handle special tokens during encoding.
+/// 指定在编码过程中如何处理特殊令牌。
 ///
-/// This enum is used to control the behavior of the `encode_special` function
-/// when encountering special tokens in the text.
+/// 此枚举用于控制 `encode_special` 函数在文本中遇到特殊令牌时的行为。
 ///
-/// # Variants
+/// # 变体
 ///
-/// - `All`: Allow all special tokens during encoding.
-///   Special tokens will be encoded according to their corresponding token IDs.
+/// - `All`: 允许所有特殊令牌进行编码。
+///   特殊令牌将根据其对应的令牌 ID 进行编码。
 ///
-/// - `None`: Ignore all special tokens during encoding.
-///   Special tokens will be treated as regular text and encoded using the standard encoding process.
+/// - `None`: 在编码过程中忽略所有特殊令牌。
+///   特殊令牌将被视为普通文本，并使用标准编码过程进行编码。
 ///
-/// - `NoneRaise`: Raise an error if any special token is encountered in the text during encoding.
-///   This is the default behavior of the `tiktoken` library.
+/// - `NoneRaise`: 如果在编码过程中遇到任何特殊令牌，则引发错误。
+///   这是 `tiktoken` 库的默认行为。
 ///
-/// - `Set(HashSet<String>)`: Allow only the special tokens specified in the provided `HashSet`.
-///   Special tokens not included in the set will be treated as regular text and encoded using the standard encoding process.
+/// - `Set(HashSet<String>)`: 仅允许提供的 `HashSet` 中指定的特殊令牌。
+///   未包含在集合中的特殊令牌将被视为普通文本，并使用标准编码过程进行编码。
 ///
-/// # Examples
+/// # 示例
 ///
 /// ```
 /// use minbpe::AllowedSpecial;
@@ -124,7 +124,7 @@ pub trait RegexTokenizerTrait: Tokenizer {
         self.encode_special(text, AllowedSpecial::NoneRaise)
     }
 
-    /// Encoding that ignores any special tokens.
+    /// 编码时忽略所有特殊令牌。
     fn encode_ordinary(&self, text: &str) -> Vec<Token> {
         let text_chunks: Vec<&str> = self
             .compiled_pattern()
@@ -143,23 +143,23 @@ pub trait RegexTokenizerTrait: Tokenizer {
         ids
     }
 
-    /// Encodes the given text into token IDs, handling special tokens.
+    /// 将给定文本编码为令牌 ID，并处理特殊令牌。
     ///
-    /// Unlike `encode_ordinary`, this function handles special tokens based on the `allowed_special` parameter.
+    /// 与 `encode_ordinary` 不同，此函数根据 `allowed_special` 参数处理特殊令牌。
     ///
-    /// # Arguments
+    /// # 参数
     ///
-    /// * `text` - The text to encode.
-    /// * `allowed_special` - Specifies how to handle special tokens. It can be one of the following:
-    ///   - `AllowedSpecial::All`: Allow all special tokens.
-    ///   - `AllowedSpecial::None`: Ignore all special tokens.
-    ///   - `AllowedSpecial::NoneRaise`: Raise an error if any special token is encountered in the text.
-    ///     This is the default behavior of the `tiktoken` library.
-    ///   - `AllowedSpecial::Set(HashSet<String>)`: A custom set of allowed special tokens.
+    /// * `text` - 要编码的文本。
+    /// * `allowed_special` - 指定如何处理特殊令牌。它可以是以下之一：
+    ///   - `AllowedSpecial::All`: 允许所有特殊令牌。
+    ///   - `AllowedSpecial::None`: 忽略所有特殊令牌。
+    ///   - `AllowedSpecial::NoneRaise`: 如果在文本中遇到任何特殊令牌，则引发错误。
+    ///     这是 `tiktoken` 库的默认行为。
+    ///   - `AllowedSpecial::Set(HashSet<String>)`: 自定义允许的特殊令牌集。
     ///
-    /// # Panics
+    /// # 异常
     ///
-    /// Panics if `allowed_special` is set to `AllowedSpecial::NoneRaise` and any special token is encountered in the text.
+    /// 如果 `allowed_special` 设置为 `AllowedSpecial::NoneRaise` 并且在文本中遇到任何特殊令牌，则引发异常。
     fn encode_special(&self, text: &str, allowed_special: AllowedSpecial) -> Vec<Token> {
         let special = match allowed_special {
             AllowedSpecial::All => self.special_tokens().clone(),
@@ -224,16 +224,16 @@ pub trait RegexTokenizerTrait: Tokenizer {
     }
 }
 
-/// Minimal (byte-level) Byte Pair Encoding tokenizer.
+/// 最小化的（字节级）字对编码分词器。
 ///
-/// Algorithmically follows along the GPT tokenizer:
+/// 算法上遵循 GPT 分词器：
 /// https://github.com/openai/gpt-2/blob/master/src/encoder.py
 ///
-/// Unlike `BasicTokenizer`:
-/// - `RegexTokenizer` handles an optional regex splitting pattern.
-/// - `RegexTokenizer` handles optional special tokens.
+/// 与 `BasicTokenizer` 不同：
+/// - `RegexTokenizer` 处理可选的正则表达式分割模式。
+/// - `RegexTokenizer` 处理可选的特殊令牌。
 ///
-/// # Examples
+/// # 示例
 ///
 /// ```
 /// use fancy_regex::Regex;
@@ -309,12 +309,12 @@ impl Tokenizer for RegexTokenizerStruct {
     }
 
     fn decode(&self, ids: &[Token]) -> String {
-        // Forwarding to the default implementation provided by RegexTokenizerTrait
+        // 转发到由 RegexTokenizerTrait 提供的默认实现
         <Self as RegexTokenizerTrait>::decode(self, ids)
     }
 
     fn encode(&self, text: &str) -> Vec<Token> {
-        // Forwarding to the default implementation provided by RegexTokenizerTrait
+        // 转发到由 RegexTokenizerTrait 提供的默认实现
         <Self as RegexTokenizerTrait>::encode(self, text)
     }
 }
@@ -324,7 +324,7 @@ impl Trainable for RegexTokenizerStruct {
         assert!(vocab_size >= 256, "Vocab size must be at least 256");
         let num_merges = vocab_size - 256;
 
-        // Split the text into chunks
+        // 将文本分割成块
         let text_chunks: Vec<&str> = self
             .compiled_pattern()
             .find_iter(text)
@@ -334,44 +334,44 @@ impl Trainable for RegexTokenizerStruct {
             })
             .collect();
 
-        // Input text preprocessing
+        // 输入文本预处理
         let mut ids: Vec<Vec<Token>> = text_chunks
             .iter()
             .map(|chunk| chunk.as_bytes().iter().map(|b| *b as Token).collect())
             .collect();
 
-        // Iteratively merge the most common pairs to create new tokens
+        // 迭代地合并最常见的对以创建新令牌
         let mut merges: IndexMap<(Token, Token), Token> = IndexMap::new();
         let mut vocab: IndexMap<Token, Vec<u8>> =
             (0..256).map(|idx| (idx, vec![idx as u8])).collect();
 
         for i in 0..num_merges {
-            // Count the number of times every consecutive pair appears
+            // 统计每个连续对出现的次数
             let mut stats = IndexMap::new();
             for chunk_ids in &ids {
                 update_stats(chunk_ids, &mut stats);
             }
 
-            // Find the pair with the highest count
+            // 查找计数最高的对
             let pair = get_max_entry(&stats).unwrap().0;
 
-            // Mint a new token: assign it the next available id
+           // 创建新令牌：为其分配下一个可用的 id
             let idx = 256 + i;
 
-            // Replace all occurrences of pair in ids with idx
+            // 将 ids 中所有 pair 的出现替换为 idx
             ids = ids
                 .iter()
                 .map(|chunk_ids| merge(chunk_ids, *pair, idx))
                 .collect();
 
-            // Save the merge
+            // 保存合并
             merges.insert(*pair, idx);
             vocab.insert(
                 idx,
                 [vocab[&pair.0].clone(), vocab[&pair.1].clone()].concat(),
             );
 
-            // Prints
+            // 打印进度
             if verbose {
                 println!(
                     "merge {}/{}: {:?} -> {} ({:?}) had {} occurrences",
@@ -385,7 +385,7 @@ impl Trainable for RegexTokenizerStruct {
             }
         }
 
-        // Save instance variables
+       // 保存实例变量
         self.merges = merges;
         self.vocab = vocab; // FIXME: vs. build_vocab(&self.special_tokens, &self.merges);
     }
@@ -447,9 +447,9 @@ mod tests {
         let mut special_chunks = Vec::new();
         for m in re.find_iter(text) {
             let m = m.unwrap();
-            // Push the text between matches
+            // 将匹配之间的文本推入
             special_chunks.push(&text[last_end..m.start()]);
-            // Push the matched text
+            // 将匹配的文本推入
             special_chunks.push(&text[m.start()..m.end()]);
             last_end = m.end();
         }

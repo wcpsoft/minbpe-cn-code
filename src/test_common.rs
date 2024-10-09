@@ -22,12 +22,16 @@ Llamas are social animals and live with others as a herd. Their wool is soft and
 The ancestors of llamas are thought to have originated from the Great Plains of North America about 40 million years ago, and subsequently migrated to South America about three million years ago during the Great American Interchange. By the end of the last ice age (10,000–12,000 years ago), camelids were extinct in North America.[3] As of 2007, there were over seven million llamas and alpacas in South America and over 158,000 llamas and 100,000 alpacas, descended from progenitors imported late in the 20th century, in the United States and Canada.[5]
 <|fim_prefix|>In Aymara mythology, llamas are important beings. The Heavenly Llama is said to drink water from the ocean and urinates as it rains.[6] According to Aymara eschatology,<|fim_suffix|> where they come from at the end of time.[6]<|fim_middle|> llamas will return to the water springs and ponds<|endofprompt|>"###;
 
-// a few strings to test the tokenizers on
+// 一些用于测试分词器的字符串
 pub const TEST_STRINGS: [&str; 4] = [
-    "",                                        // empty string
-    "?",                                       // single character
-    "hello world!!!? (안녕하세요!) lol123 😉", // fun small string
-    "FILE:../tests/taylorswift.txt",           // FILE: is handled as a special string in unpack()
+    // 空字符串
+    "",
+    // 单个字符
+    "?",
+    // 有趣的简短字符串
+    "hello world!!!? (안녕하세요!) lol123 😉",
+    // FILE: 在 unpack() 中作为特殊字符串处理
+    "FILE:../tests/taylorswift.txt",
 ];
 
 pub fn test_strings() -> [&'static str; 4] {

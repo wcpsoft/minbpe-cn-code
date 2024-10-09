@@ -4,16 +4,16 @@ use crate::base::{
     get_max_entry, get_stats, merge, Loadable, Saveable, Token, Tokenizer, Trainable,
 };
 
-/// Minimal (byte-level) Byte Pair Encoding tokenizer.
+/// 最小化的（字节级）字对编码分词器。
 ///
-/// Algorithmically follows along the GPT tokenizer:
+/// 算法上遵循 GPT 分词器：
 /// https://github.com/openai/gpt-2/blob/master/src/encoder.py
 ///
-/// But:
-/// - Does not handle the regular expression splitting pattern.
-/// - Does not handle any special tokens.
+/// 但是：
+/// - 不处理正则表达式分割模式。
+/// - 不处理任何特殊令牌。
 ///
-/// # Examples
+/// # 示例
 ///
 /// ```
 /// use minbpe::BasicTokenizer;
@@ -67,7 +67,7 @@ impl Tokenizer for BasicTokenizer {
     }
 
     fn decode(&self, ids: &[Token]) -> String {
-        // Given ids (list of integers), return Rust string
+       // 给定 ids（整数列表），返回 Rust 字符串
         let text_bytes: Vec<u8> = ids
             .iter()
             .flat_map(|&idx| self.vocab[&idx].clone())
@@ -76,11 +76,11 @@ impl Tokenizer for BasicTokenizer {
     }
 
     fn encode(&self, text: &str) -> Vec<Token> {
-        // Given a string text, return the token ids
+       // 给定一个字符串 text，返回令牌 id
         let text_bytes = text.as_bytes();
         let mut ids: Vec<Token> = text_bytes.iter().map(|&b| b as Token).collect();
         while ids.len() >= 2 {
-            // Find the pair with the lowest merge index
+           // 查找具有最低合并索引的对
             let stats = get_stats(&ids);
 
             let pair_opt = stats
@@ -89,9 +89,10 @@ impl Tokenizer for BasicTokenizer {
                 .min_by_key(|&pair| self.merges[&pair]);
 
             match pair_opt {
-                None => break, // If there are no more merges available, break
+                // 如果没有更多的合并可用，退出循环
+                None => break,
                 Some(pair) => {
-                    // Otherwise, merge the best pair (lowest merge index)
+                    // 否则，合并最佳对（最低合并索引）
                     let idx = self.merges[&pair];
                     ids = merge(&ids, pair, idx);
                 }
@@ -106,30 +107,30 @@ impl Trainable for BasicTokenizer {
         assert!(vocab_size >= 256, "Vocab size must be at least 256");
         let num_merges = vocab_size - 256;
 
-        // Input text preprocessing
+       // 输入文本预处理
         let text_bytes = text.as_bytes();
         let mut ids: Vec<Token> = text_bytes.iter().map(|&b| b as Token).collect();
 
-        // Iteratively merge the most common pairs to create new tokens
+        // 迭代地合并最常见的对以创建新令牌
         let mut merges: IndexMap<(Token, Token), Token> = IndexMap::new();
         let mut vocab: IndexMap<Token, Vec<u8>> =
             (0..256).map(|idx| (idx, vec![idx as u8])).collect();
         for i in 0..num_merges {
-            // Count up the number of times every consecutive pair appears
+            // 统计每个连续对出现的次数
             let stats = get_stats(&ids);
-            // Find the pair with the highest count
+            // 查找计数最高的对
             let pair = get_max_entry(&stats).unwrap().0;
-            // Mint a new token: assign it the next available id
+            // 创建新令牌：为其分配下一个可用的 id
             let idx = 256 + i;
-            // Replace all occurrences of pair in ids with idx
+            // 将 ids 中所有 pair 的出现替换为 idx
             ids = merge(&ids, *pair, idx);
-            // Save the merge
+           // 保存合并
             merges.insert(*pair, idx);
             vocab.insert(
                 idx,
                 [vocab[&pair.0].clone(), vocab[&pair.1].clone()].concat(),
             );
-            // Prints
+            // 打印 进度
             if verbose {
                 println!(
                     "merge {}/{}: {:?} -> {} ({:?}) had {} occurrences",
@@ -143,9 +144,9 @@ impl Trainable for BasicTokenizer {
             }
         }
 
-        // Save instance variables
+        // 保存实例变量
         self.merges = merges;
-        self.vocab = vocab; // FIXME: vs. build_vocab(&self.special_tokens, &self.merges);
+        self.vocab = vocab;
     }
 }
 

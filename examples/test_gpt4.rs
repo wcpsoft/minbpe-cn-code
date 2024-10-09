@@ -4,7 +4,7 @@ use minbpe::RegexTokenizerTrait;
 fn main() {
     let text = "\u{1e01b}%SΣ";
 
-    // Pre-initialize the tokenizer
+    // 预初始化分词器
     let start = std::time::Instant::now();
     GPT4Tokenizer::initialize();
     let duration = start.elapsed();
@@ -13,7 +13,7 @@ fn main() {
         duration
     );
 
-    // Initialize the tokenizer
+    // 获取分词器的默认实例
     let start = std::time::Instant::now();
     let tokenizer = GPT4Tokenizer::default();
     let duration = start.elapsed();
@@ -22,7 +22,7 @@ fn main() {
         duration
     );
 
-    // Encode the string
+    // 编码字符串
     let start = std::time::Instant::now();
     let tokens = tokenizer.encode(text);
     let duration = start.elapsed();
@@ -32,6 +32,6 @@ fn main() {
         duration
     );
 
-    // Print the resulting tokens
+    // 打印生成的令牌
     println!("{:?}", tokens);
 }
