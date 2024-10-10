@@ -15,7 +15,7 @@ mod tests {
 
         let text = unpack(&text).unwrap();
         println!(
-            "test_gpt4_tiktoken_equality_inner: text length is: {:?}",
+            "当前test_gpt4_tiktoken_equality_inner接受输入的文本长度为: {:?}",
             text.len()
         );
         use std::time::Instant;
@@ -26,25 +26,25 @@ mod tests {
         let tiktoken_ids = enc.encode(&text, special_tokens);
         let tiktoken_tokens: Vec<Token> = tiktoken_ids.iter().map(|&id| id as Token).collect();
         let tiktoken_duration = tiktoken_start.elapsed();
-        println!("TikToken encoding took: {:?}", tiktoken_duration);
+        println!("TikToken 编码耗时: {:?}", tiktoken_duration);
 
         let tokenizer = GPT4Tokenizer::new();
 
         let gpt4_start = Instant::now();
         let gpt4_tokenizer_tokens = tokenizer.encode(&text);
         let gpt4_duration = gpt4_start.elapsed();
-        println!("GPT4 encoding took: {:?}", gpt4_duration);
+        println!("当前GPT4 编码耗时: {:?}", gpt4_duration);
 
         assert_eq!(
             tiktoken_tokens.len(),
             gpt4_tokenizer_tokens.len(),
-            "Token vectors are of different lengths: {} expected, but found {}",
+            "令牌向量长度不同：期望长度为 {}，实际长度为 {}",
             tiktoken_tokens.len(),
             gpt4_tokenizer_tokens.len()
         );
         assert_eq!(
             tiktoken_tokens, gpt4_tokenizer_tokens,
-            "Token vectors do not match"
+            "令牌向量不匹配"
         );
     }
 
@@ -54,7 +54,7 @@ mod tests {
         GPT4Tokenizer::initialize();
 
         for text in TEST_STRINGS.iter() {
-            println!("test_gpt4_tiktoken_equality: testing with text: {:?}", text);
+            println!("使用文本进行测试：{:?}", text);
             let text = unpack(text).unwrap();
             test_gpt4_tiktoken_equality_inner(text);
         }

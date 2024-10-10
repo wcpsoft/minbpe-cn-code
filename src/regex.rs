@@ -62,7 +62,7 @@ pub trait RegexTokenizerTrait: Tokenizer {
         let merges = self.merges();
         let mut ids: Vec<Token> = text_bytes.iter().map(|&b| b as Token).collect();
         while ids.len() >= 2 {
-            // Find the pair with the lowest merge index
+            // 找到合并索引最小一对元素
             let stats = get_stats(&ids);
 
             let pair_opt = stats
@@ -71,9 +71,9 @@ pub trait RegexTokenizerTrait: Tokenizer {
                 .min_by_key(|&pair| merges[&pair]);
 
             match pair_opt {
-                None => break, // If there are no more merges available, break
+                None => break, // 如果没有更多的合并可用，则中断循环
                 Some(pair) => {
-                    // Otherwise, merge the best pair (lowest merge index)
+                    // 否则，合并最佳对（最低合并索引
                     let idx = merges[&pair];
                     ids = merge(&ids, pair, idx);
                 }
@@ -201,9 +201,9 @@ pub trait RegexTokenizerTrait: Tokenizer {
         let mut special_chunks = Vec::new();
         for m in re.find_iter(text) {
             let m = m.unwrap();
-            // Push the text between matches
+            // 将匹配之间的文本存储在 special_chunks
             special_chunks.push(&text[last_end..m.start()]);
-            // Push the matched text
+            // 将匹配的文本存储在 special_chunks
             special_chunks.push(&text[m.start()..m.end()]);
             last_end = m.end();
         }
@@ -321,7 +321,7 @@ impl Tokenizer for RegexTokenizerStruct {
 
 impl Trainable for RegexTokenizerStruct {
     fn train(&mut self, text: &str, vocab_size: Token, verbose: bool) {
-        assert!(vocab_size >= 256, "Vocab size must be at least 256");
+        assert!(vocab_size >= 256, "词汇表大小必须至少为256");
         let num_merges = vocab_size - 256;
 
         // 将文本分割成块
@@ -387,7 +387,8 @@ impl Trainable for RegexTokenizerStruct {
 
        // 保存实例变量
         self.merges = merges;
-        self.vocab = vocab; // FIXME: vs. build_vocab(&self.special_tokens, &self.merges);
+        // FIXME: 应该是 build_vocab(&self.special_tokens, &self.merges);
+        self.vocab = vocab;
     }
 }
 

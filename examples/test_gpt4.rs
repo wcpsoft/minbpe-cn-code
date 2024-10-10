@@ -9,7 +9,7 @@ fn main() {
     GPT4Tokenizer::initialize();
     let duration = start.elapsed();
     println!(
-        "GPT4Tokenizer static initialization completed in: {:?}",
+        "GPT4Tokenizer 静态初始化完成于：{:?}",
         duration
     );
 
@@ -18,7 +18,7 @@ fn main() {
     let tokenizer = GPT4Tokenizer::default();
     let duration = start.elapsed();
     println!(
-        "GPT4Tokenizer default instance construction completed in: {:?}",
+        "GPT4Tokenizer 默认实例构造完成于: {:?}",
         duration
     );
 
@@ -27,7 +27,7 @@ fn main() {
     let tokens = tokenizer.encode(text);
     let duration = start.elapsed();
     println!(
-        "GPT4Tokenizer encoding of {} character string completed in: {:?}",
+        "GPT4Tokenizer 对 {} 个字符的字符串编码完成于： {:?}",
         text.len(),
         duration
     );

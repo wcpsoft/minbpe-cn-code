@@ -67,17 +67,17 @@ pub trait Saveable: Tokenizer {
     fn save(&self, dir: &Path, prefix: &str) {
         // 写入模型文件（用于稍后加载分词器）
         let model_file_path = dir.join(format!("{}.model", prefix));
-        let mut model_file = File::create(model_file_path).expect("Unable to create model file");
+        let mut model_file = File::create(model_file_path).expect("无法创建.model文件");
 
        // 写入版本、模式和合并
-        writeln!(model_file, "minbpe v1").expect("Unable to write to model file");
-        writeln!(model_file, "{}", self.pattern()).expect("Unable to write to model file");
+        writeln!(model_file, "minbpe v1").expect("无法写入文件");
+        writeln!(model_file, "{}", self.pattern()).expect("无法写入文件");
 
         // 写入特殊令牌（首先是数量，然后是每个令牌及其索引）
         writeln!(model_file, "{}", self.special_tokens().len())
-            .expect("Unable to write to model file");
+            .expect("无法写入文件");
         for (special, idx) in self.special_tokens() {
-            writeln!(model_file, "{} {}", special, idx).expect("Unable to write to model file");
+            writeln!(model_file, "{} {}", special, idx).expect("无法写入文件");
         }
 
         let mut merges: Vec<(&(Token, Token), &Token)> = self.merges().iter().collect();
@@ -86,12 +86,12 @@ pub trait Saveable: Tokenizer {
         // 写入合并字典
         for (token_pair, _new_token) in merges {
             writeln!(model_file, "{} {}", token_pair.0, token_pair.1)
-                .expect("Unable to write to model file");
+                .expect("无法写入文件");
         }
 
         // 写入词汇表文件（提供给人工检查，可读性较好）
         let vocab_file_path = dir.join(format!("{}.vocab", prefix));
-        let mut vocab_file = File::create(vocab_file_path).expect("Unable to create vocab file");
+        let mut vocab_file = File::create(vocab_file_path).expect("无法创建文件");
 
         // 反转合并字典以便于查找
         let inverted_merges: IndexMap<Token, (Token, Token)> = self
@@ -103,18 +103,18 @@ pub trait Saveable: Tokenizer {
         let vocab = self.vocab();
 
         for (idx, token) in vocab {
-            // Render the token, replacing invalid UTF-8 sequences with the replacement character
+            // 渲染令牌，将无效的 UTF-8 序列替换为替换字符。
             let s = render_token(token);
 
             if let Some((idx0, idx1)) = inverted_merges.get(idx) {
-                // If the token has children, render it as a merge
+                // 如果令牌有子项，则将其渲染为合并。
                 let s0 = render_token(&vocab[idx0]);
                 let s1 = render_token(&vocab[idx1]);
                 writeln!(vocab_file, "[{}][{}] -> [{}] {}", s0, s1, s, idx)
-                    .expect("Unable to write to vocab file");
+                    .expect("无法写入文件");
             } else {
-                // Otherwise, it's a leaf token (one of the first 256 bytes)
-                writeln!(vocab_file, "[{}] {}", s, idx).expect("Unable to write to vocab file");
+                // 否则，它是一个叶令牌（前 256 个字节之一）。
+                writeln!(vocab_file, "[{}] {}", s, idx).expect("无法写入文件");
             }
         }
     }
@@ -151,40 +151,40 @@ pub trait Loadable: Tokenizer {
     fn load(&mut self, model_file: &Path) {
         assert!(
             model_file.extension().map_or(false, |ext| ext == "model"),
-            "Model file must have a .model extension"
+            "模型文件必须有 .model 扩展名"
         );
 
         let mut merges: IndexMap<(Token, Token), Token> = IndexMap::new();
         let mut special_tokens: IndexMap<String, Token> = IndexMap::new();
         let mut idx: Token = 256;
 
-        let file = File::open(model_file).expect("Unable to open model file");
+        let file = File::open(model_file).expect("无法打开模型文件");
         let reader = BufReader::new(file);
 
         let lines: Vec<String> = reader
             .lines()
-            .map(|line| line.expect("Unable to read line from model file"))
+            .map(|line| line.expect("无法从模型文件中读取行"))
             .collect();
 
         let mut line_iter = lines.iter();
 
         if let Some(version) = line_iter.next() {
-            assert_eq!(version, "minbpe v1", "Invalid model file version");
+            assert_eq!(version, "minbpe v1", "无效的模型文件版本");
         } else {
-            panic!("Missing version line in model file");
+            panic!("模型文件中缺少版本行");
         }
 
         // 检查 Tokenizer 是否支持 Pattern。
         if let Some(pattern) = line_iter.next() {
             self.set_pattern(pattern);
         } else {
-            panic!("Missing pattern line in model file");
+            panic!("模型文件中缺少模式行");
         }
 
         if let Some(num_special_str) = line_iter.next() {
             let num_special = num_special_str
                 .parse::<Token>()
-                .expect("Invalid number of special tokens");
+                .expect("无效的特殊令牌数量");
 
             // FIXME: 检查 Tokenizer 是否支持特殊令牌。
             // FIXME: 确保其值 >= 0，因为 Token 类型是有符号的。
@@ -192,33 +192,33 @@ pub trait Loadable: Tokenizer {
             for _ in 0..num_special {
                 if let Some(special_line) = line_iter.next() {
                     let mut parts = special_line.split_whitespace();
-                    let special = parts.next().expect("Missing special token").to_string();
+                    let special = parts.next().expect("缺少特殊令牌").to_string();
                     let special_idx = parts
                         .next()
-                        .expect("Missing special token index")
+                        .expect("缺少特殊令牌索引")
                         .parse::<Token>()
-                        .expect("Invalid special token index");
+                        .expect("无效的特殊令牌索引");
                     special_tokens.insert(special, special_idx);
                 } else {
-                    panic!("Missing special token line in model file");
+                    panic!("模型文件中缺少特殊令牌行");
                 }
             }
         } else {
-            panic!("Missing number of special tokens line in model file");
+            panic!("模型文件中缺少特殊令牌数量行");
         }
 
         for merge_line in line_iter {
             let mut parts = merge_line.split_whitespace();
             let idx1 = parts
                 .next()
-                .expect("Missing first index")
+                .expect("缺少第一个索引")
                 .parse::<Token>()
-                .expect("Invalid first index");
+                .expect("无效的第一个索引");
             let idx2 = parts
                 .next()
-                .expect("Missing second index")
+                .expect("缺少第二个索引")
                 .parse::<Token>()
-                .expect("Invalid second index");
+                .expect("无效的第二个索引");
             merges.insert((idx1, idx2), idx);
             idx += 1;
         }
@@ -448,18 +448,18 @@ mod tests {
         let keys: Vec<_> = stats.keys().collect();
         let input_keys: Vec<_> = input_data.iter().map(|(k, _)| k).collect();
 
-        assert_eq!(keys, input_keys, "Keys are not in insertion order");
+        assert_eq!(keys, input_keys, "键不是按插入顺序排列的");
 
         let entries: Vec<_> = stats.iter().map(|(k, v)| (*k, *v)).collect();
         assert_eq!(
             entries,
             input_data.as_slice(),
-            "Entries are not in insertion order"
+            "条目不是按插入顺序排列的"
         );
 
         let max_entry = get_max_entry(&stats);
 
-        let pair = max_entry.expect("Stats is empty");
+        let pair = max_entry.expect("统计信息为空");
 
         assert_eq!(*pair.0, expected_max_key);
     }

@@ -89,7 +89,7 @@ fn recover_merges(mergeable_ranks: &IndexMap<Vec<u8>, Token>) -> IndexMap<(Token
     merges
 }
 
-/// Does not implement Tokenizer trait because it cannot be trained, loaded or saved.
+/// // 由于这个组件无法进行训练、加载或保存，因此不实现 Tokenizer 特征。
 pub struct GPT4Tokenizer {
     special_tokens: IndexMap<String, Token>,
     inverse_special_tokens: IndexMap<Token, String>,

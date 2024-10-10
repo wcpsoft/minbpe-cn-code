@@ -9,9 +9,9 @@ use minbpe::Tokenizer;
 use minbpe::Trainable;
 
 fn main() {
-    let text = fs::read_to_string("tests/taylorswift.txt").expect("Unable to read file");
+    let text = fs::read_to_string("tests/taylorswift.txt").expect("没有读到文件");
 
-    fs::create_dir_all("models").expect("Unable to create models directory");
+    fs::create_dir_all("models").expect("无法创建models目录");
 
     let basic = BasicTokenizer::new();
     let regex = RegexTokenizerStruct::default();
@@ -30,5 +30,5 @@ fn main() {
     let t1 = Instant::now();
 
     let duration = t1.duration_since(t0);
-    println!("Training took {:.2} seconds", duration.as_secs_f64());
+    println!("训练耗时 {:.2} 秒", duration.as_secs_f64());
 }

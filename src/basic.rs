@@ -104,7 +104,7 @@ impl Tokenizer for BasicTokenizer {
 
 impl Trainable for BasicTokenizer {
     fn train(&mut self, text: &str, vocab_size: Token, verbose: bool) {
-        assert!(vocab_size >= 256, "Vocab size must be at least 256");
+        assert!(vocab_size >= 256, "词汇表大小必须至少为256");
         let num_merges = vocab_size - 256;
 
        // 输入文本预处理
@@ -133,7 +133,7 @@ impl Trainable for BasicTokenizer {
             // 打印 进度
             if verbose {
                 println!(
-                    "merge {}/{}: {:?} -> {} ({:?}) had {} occurrences",
+                    "合并 {}/{}: {:?} -> {} ({:?}) 出现了 {} 次",
                     i + 1,
                     num_merges,
                     pair,
@@ -161,7 +161,7 @@ impl Loadable for BasicTokenizer {
         let temp = pattern.trim();
 
         if !temp.is_empty() {
-            panic!("Cannot set a non-empty pattern!")
+            panic!("不能设置非空模式")
         }
     }
 

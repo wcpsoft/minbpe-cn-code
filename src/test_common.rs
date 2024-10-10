@@ -42,7 +42,7 @@ pub fn unpack(text: &str) -> std::io::Result<String> {
     if let Some(filename) = text.strip_prefix("FILE:") {
         let dirname = PathBuf::from(file!()).parent().unwrap().to_path_buf();
         let file_path = dirname.join(filename);
-        println!("Reading file: {:?}...", file_path);
+        println!("读取文件: {:?}...", file_path);
         fs::read_to_string(file_path)
     } else {
         Ok(text.to_string())
